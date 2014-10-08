@@ -7,45 +7,73 @@
 #include "TDirectory.h"
 #include "TPaveText.h"
 #include "TPaveStats.h"
+#include "TROOT.h"
+#include "TStyle.h"
+#include "TColor.h"
+#include "TLegend.h"
+#include "TKey.h"
+#include "TClass.h"
 
 #include <iostream>
-#include <vector>
+#include <map>
 #include <string>
 #include <cstdio>
 
-#include "CombinedCaloTowers.C"
+//#include "CombinedCaloTowers.C"
 
 template<class T1, class T2>
-void prn(T1 s0, T2 s1) {
-    std::cout << "\t>> " << s0 << ": " << s1 << std::endl;
+void prn(T1 s1, T2 s2) 
+{
+    std::cout << "\t>> " << s1 << ": " << s2 << std::endl;
 }
 
-TDirectory* findDirectory( TDirectory *target, std::string s);
-void ProcessRelVal(TFile &ref_file, TFile &val_file, ifstream &recstr, TString ref_vers, TString val_vers, int harvest = 0, bool bRBX = false, bool bHD = false);
+void RelValMacro(std::string ref_vers, std::string val_vers, std::string rfname, std::string vfname, std::string inputStream = "InputRelVal.txt");
+void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::string val_vers, std::string histName, std::string outLabel, int nRebin, double xAxisMin, double xAxisMax, double yAxisMin, double yAxisMax,
+                   std::string dimSwitch, std::string statSwitch, std::string chi2Switch, std::string logSwitch, int refCol, int valCol, std::string xAxisTitle);
 
-void RelValMacro(std::string ref_vers = "218", std::string val_vers = "218", std::string rfname, std::SString vfname, std::string inputStream = "InputRelVal.txt") 
+class DirectoryFinder
+{
+private:
+    std::map<std::string, TDirectory*> ptdMap;
+    TDirectory* findDirectory( TDirectory *target, std::string& s);
+public:
+    TDirectory* operator()(TDirectory *target, std::string& s);
+} dfRef, dfVal;
+
+int main(int argn, char **argv)
+{
+    if(argn == 5)       RelValMacro(argv[1], argv[2], argv[3], argv[4]);
+    else if(argn == 6)  RelValMacro(argv[1], argv[2], argv[3], argv[4], argv[5]);
+    else
+    {
+	printf("Usage: ./RelValMacro.exe refVersion valVersion refFileName valFileName [input stream]\n");
+    }
+}
+
+void RelValMacro(std::string ref_vers, std::string val_vers, std::string rfname, std::string vfname, std::string inputStream) 
 {
     TFile Ref_File(rfname.c_str());
     TFile Val_File(vfname.c_str());
-    
+
     //File Read 
     FILE * inputFile = NULL;
-    if((inputFile = fopen(inputStream, "r")))
+    if((inputFile = fopen(inputStream.c_str(), "r")))
     {
         char buff[4096];
         char *c;
+	
+	char histName[128], ofileName[128], xAxisTitle[128];
+	double xAxisMin, xAxisMax, yAxisMin, yAxisMax;
+	char dimFlag[32], statFlag[32], chi2Flag[32], logFlag[32];
+	int nRebin, draw, refCol, valCol;
+
         while(!feof(inputFile) && (c = fgets(buff, 4096, inputFile)) != NULL)
-        {
-            char histName[128], ofileName[128], xAxisTitle[128];
-            double xAxisMin, xAxisMax, yAxisMin, yAxisMax;
-            char dimFlag[32], statFlag[32], chi2Flag[32], logFlag[32];
-            int nRebin, draw, refCol, valCol;
-            
+        {            
             //The following lines allow for comments.  The first comment character (#) will be replaced with a end of string.
             char* k = strchr(buff, '#');
             if(k) *k = '\0';
             //Parse the line
-            if(sscanf(buff, "%s %d %s %d %lf %lf %lf %lf %s %s %s %s %d %d %[^\n]", histName, &draw, ofileName, &nRebin, &xAxisMin, &xAxisMax, &yAxisMin, &yAxisMax, dimFlag, statFlag, chi2Flag, logFlag, &refCol, &valCol, xAxisTitle) == 15);
+            if(sscanf(buff, "%s %d %s %d %lf %lf %lf %lf %s %s %s %s %d %d %[^\n]", histName, &draw, ofileName, &nRebin, &xAxisMin, &xAxisMax, &yAxisMin, &yAxisMax, dimFlag, statFlag, chi2Flag, logFlag, &refCol, &valCol, xAxisTitle) == 15)
             {
                 //Skip is set not to draw
                 if(!draw) continue;
@@ -60,7 +88,7 @@ void RelValMacro(std::string ref_vers = "218", std::string val_vers = "218", std
         std::cout << "Input file not found!!!" << std::endl;
     }
 
-    ProcessSubDetCT(Ref_File, Val_File, RelValStream, CT_nHist1, CT_nHist2, CT_nProf, CT_nHistTot, ref_vers, val_vers, harvest);
+//    ProcessSubDetCT(Ref_File, Val_File, RelValStream, CT_nHist1, CT_nHist2, CT_nProf, CT_nHistTot, ref_vers, val_vers, harvest);
 
     Ref_File.Close();
     Val_File.Close();
@@ -81,12 +109,14 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
     //}
     
     //split directory off histName 
-    std::string histDir = histName.substr(0, histName.rfind("/"));
-    histName = histName.substr(histName.rfind("/"), -1);
+    int slashLoc = histName.rfind("/");
+    std::string histDir = histName.substr(0, slashLoc);
+    if(slashLoc < histName.size() - 1) histName = histName.substr(slashLoc + 1, histName.size());
+
     //Get objects from TFiles
-    TDirectory *refTD = findDirectory(&ref_file, histDir);
+    TDirectory *refTD = dfRef(&ref_file, histDir);
     TObject *refObj = refTD->Get(histName.c_str());
-    TDirectory *valTD = findDirectory(&ref_file, histDir);
+    TDirectory *valTD = dfVal(&val_file, histDir);
     TObject *valObj = valTD->Get(histName.c_str());
 
     // Nasty trick:
@@ -99,15 +129,16 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
     Int_t maxPretty = 50;
     Float_t hue;
 
-    for (int j = 0; j < maxPretty; j++) {
+    /*for (int j = 0; j < maxPretty; j++) {
         hue = maxHue - (j + 1)*((maxHue - minHue) / maxPretty);
         TColor::HLStoRGB(hue, lightness, saturation, r, g, b);
         TColor *color = (TColor*) (gROOT->GetListOfColors()->At(j + 51));
         color->SetRGB(r, g, b);
-     }
+	}*/
      gStyle->SetPalette(1);
 
     //Format canvas
+    TCanvas *myc = 0;
     if (dimSwitch.compare("PRwide") == 0) {
         gStyle->SetPadLeftMargin(0.06);
         gStyle->SetPadRightMargin(0.03);
@@ -191,7 +222,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         }
 
         //Title
-        if (xTitleCheck != "NoTitle") ref_hist1->GetXaxis()->SetTitle(xAxisTitle);
+        if (xTitleCheck != "NoTitle") ref_hist1->GetXaxis()->SetTitle(xAxisTitle.c_str());
 
         //Different histo colors and styles
         ref_hist1->SetTitle("");
@@ -234,7 +265,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 
             sprintf(tempbuff, "Chi2 p-value: %6.3E", pval);
 
-            ptchi2 = new TPaveText(0.05, 0.92, 0.35, 0.99, "NDC");
+            TPaveText* ptchi2 = new TPaveText(0.05, 0.92, 0.35, 0.99, "NDC");
 
             if (pval > NCHI2MIN) ptchi2->SetFillColor(kGreen);
             else ptchi2->SetFillColor(kRed);
@@ -251,11 +282,11 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 
         //Stat Box where required
         if (statSwitch.compare("Stat") == 0 || statSwitch.compare("Statrv") == 0) {
-            ptstats_r = new TPaveStats(0.85, 0.86, 0.98, 0.98, "brNDC");
+            TPaveStats* ptstats_r = new TPaveStats(0.85, 0.86, 0.98, 0.98, "brNDC");
             ptstats_r->SetTextColor(refCol);
             ref_hist1->GetListOfFunctions()->Add(ptstats_r);
             ptstats_r->SetParent(ref_hist1->GetListOfFunctions());
-            ptstats_v = new TPaveStats(0.85, 0.74, 0.98, 0.86, "brNDC");
+            TPaveStats* ptstats_v = new TPaveStats(0.85, 0.74, 0.98, 0.86, "brNDC");
             ptstats_v->SetTextColor(valCol);
             val_hist1->GetListOfFunctions()->Add(ptstats_v);
             ptstats_v->SetParent(val_hist1->GetListOfFunctions());
@@ -298,7 +329,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 
 
         //Legend
-        leg = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
+        TLegend* leg = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
         leg->SetBorderSize(2);
         leg->SetFillStyle(1001);
 
@@ -311,7 +342,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
             val_prof->SetTitle("");
             val_prof->SetErrorOption("");
 
-            ref_prof->GetXaxis()->SetTitle(xAxisTitle);
+            ref_prof->GetXaxis()->SetTitle(xAxisTitle.c_str());
 
             if (statSwitch.compare("Stat") != 0 && statSwitch.compare("Statrv") != 0) {
                 ref_prof->SetStats(kFALSE);
@@ -354,7 +385,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
             ref_fp->SetTitle("");
             val_fp->SetTitle("");
 
-            ref_fp->GetXaxis()->SetTitle(xAxisTitle);
+            ref_fp->GetXaxis()->SetTitle(xAxisTitle.c_str());
 
             if(statSwitch.compare("Stat") != 0 && statSwitch.compare("Statrv") != 0) 
             {
@@ -540,12 +571,11 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         val_hist2D->SetTitle("");
 
         // special zoom on HB/HE depth1
-        if (n2D == 1) {
-            ref_hist2D->GetXaxis()->SetRangeUser(-29., 28.);
-            val_hist2D->GetXaxis()->SetRangeUser(-29., 28.);
-        }
+        //if (n2D == 1) {
+        //    ref_hist2D->GetXaxis()->SetRangeUser(-29., 28.);
+        //    val_hist2D->GetXaxis()->SetRangeUser(-29., 28.);
+        //}
 
-        //AF
         //Min/Max Convetion: Default AxisMin = 0. Default AxisMax = -1.
         //xAxis
         if (xAxisMax > 0 || xAxisMin != 0) {
@@ -563,34 +593,34 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         leg1->SetFillStyle(1001);
         leg1->AddEntry(ref_hist2D, ("CMSSW_" + ref_vers).c_str(), "l");
 
-        if (xTitleCheck != "NoTitle") ref_hist2D->GetXaxis()->SetTitle(xAxisTitle);
+        if (xTitleCheck != "NoTitle") ref_hist2D->GetXaxis()->SetTitle(xAxisTitle.c_str());
         ref_hist2D->Draw("colz");
         leg1->Draw();
-        myc->SaveAs("ref_" + outLabel.c_str());
-
+        myc->SaveAs(("ref_" + outLabel).c_str());
 
         TLegend *leg2 = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
         leg2->SetBorderSize(2);
         leg2->SetFillStyle(1001);
         leg2->AddEntry(val_hist2D, ("CMSSW_" + val_vers).c_str(), "l");
 
-        if (xTitleCheck != "NoTitle") val_hist2D->GetXaxis()->SetTitle(xAxisTitle);
+        if (xTitleCheck != "NoTitle") val_hist2D->GetXaxis()->SetTitle(xAxisTitle.c_str());
         val_hist2D->Draw("colz");
         leg2->Draw();
-        myc->SaveAs("val_" + outLabel.c_str());
+        myc->SaveAs(("val_" + outLabel).c_str());
     }
 
+    delete myc;
 
-    if (myc) delete myc;
-    if (leg) delete leg;
-    if (ptchi2) delete ptchi2;
-    if (ptstats_r) delete ptstats_r;
-    if (ptstats_v) delete ptstats_v;
-    
     return;
 }
 
-TDirectory* findDirectory( TDirectory *target, std::string s)
+TDirectory* DirectoryFinder::operator()(TDirectory *target, std::string& s)
+{
+    if(ptdMap[s] == 0) return (ptdMap[s] = findDirectory(target, s));
+    else               return ptdMap[s];
+}
+
+TDirectory* DirectoryFinder::findDirectory( TDirectory *target, std::string& s)
 {
     TDirectory *retval = 0;
 
@@ -599,22 +629,23 @@ TDirectory* findDirectory( TDirectory *target, std::string s)
     TKey *key, *oldkey=0;
     while((key = (TKey*)nextkey()))
     {
-        //keep only the highest cycle number for each key                                                                                                                                                                                    
-        if (oldkey && !strcmp(oldkey->GetName(),key->GetName())) continue;
+	//keep only the highest cycle number for each key                                                                                                                                                                                    
+	if (oldkey && !strcmp(oldkey->GetName(),key->GetName())) continue;
 
-        // read object from file                                                                                                                                                                                                             
-        target->cd();
-        TObject *obj = key->ReadObj();
+	// read object from file                                                                                                                                                                                                             
+	target->cd();
+	TObject *obj = key->ReadObj();
 
-        if(obj->IsA()->InheritsFrom(TDirectory::Class()))
-        {
-            // it's a subdirectory                                                                                                                                                                                                           
-            //cout << "Found subdirectory " << obj->GetName() << endl;                                                                                                                                                                       
-            if(strcmp(s.c_str(), obj->GetName()) == 0) return (TDirectory*)obj;
+	if(obj->IsA()->InheritsFrom(TDirectory::Class()))
+	{
+	    // it's a subdirectory                                                                                                                                                                                                           
+	    //cout << "Found subdirectory " << obj->GetName() << endl;                                                                                                                                                                       
+	    if(strcmp(s.c_str(), obj->GetName()) == 0) return (TDirectory*)obj;
 
-            if((retval = fileDirectory((TDirectory*)obj, s))) break;
+	    if((retval = findDirectory((TDirectory*)obj, s))) break;
 
-        }
+	}
     }
+
     return retval;
 }
