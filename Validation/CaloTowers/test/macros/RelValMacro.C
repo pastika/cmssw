@@ -15,27 +15,18 @@
 
 #include "CombinedCaloTowers.C"
 
-using namespace std;
-
-void prn(TString s0, TString s1) {
+template<class T1, class T2>
+void prn(T1 s0, T2 s1) {
     std::cout << "\t>> " << s0 << ": " << s1 << std::endl;
-}
-
-void prn(TString s0, double d) {
-    std::cout << "\t>> " << s0 << ": " << d << std::endl;
 }
 
 TDirectory* findDirectory( TDirectory *target, std::string s);
 void ProcessRelVal(TFile &ref_file, TFile &val_file, ifstream &recstr, TString ref_vers, TString val_vers, int harvest = 0, bool bRBX = false, bool bHD = false);
 
-void RelValMacro(TString ref_vers = "218", TString val_vers = "218", TString rfname, TString vfname, TString inputStream = "InputRelVal.txt") {
-
-    ifstream RelValStream;
-
-    RelValStream.open(InputStream);
-
-    TFile Ref_File(rfname);
-    TFile Val_File(vfname);
+void RelValMacro(std::string ref_vers = "218", std::string val_vers = "218", std::string rfname, std::SString vfname, std::string inputStream = "InputRelVal.txt") 
+{
+    TFile Ref_File(rfname.c_str());
+    TFile Val_File(vfname.c_str());
     
     //File Read 
     FILE * inputFile = NULL;
@@ -59,7 +50,7 @@ void RelValMacro(TString ref_vers = "218", TString val_vers = "218", TString rfn
                 //Skip is set not to draw
                 if(!draw) continue;
                 //Make plot
-                
+                ProcessRelVal(Ref_File, Val_File, ref_vers, val_vers, histName, ofileName, nRebin, xAxisMin, xAxisMax, yAxisMin, yAxisMax, dimFlag, statFlag, chi2Flag, logFlag, refCol, valCol, xAxisTitle);
             }
         }
         fclose(inputFile);                                                                                                                                                                                                         
@@ -69,14 +60,7 @@ void RelValMacro(TString ref_vers = "218", TString val_vers = "218", TString rfn
         std::cout << "Input file not found!!!" << std::endl;
     }
 
-    ProcessRelVal(Ref_File, Val_File, RelValStream, HD_nHist1, HD_nHist2, HD_nHist2D, HD_nProfInd, HD_nHistTot, ref_vers, val_vers, harvest, false, true);
-
     ProcessSubDetCT(Ref_File, Val_File, RelValStream, CT_nHist1, CT_nHist2, CT_nProf, CT_nHistTot, ref_vers, val_vers, harvest);
-
-    ProcessRelVal(Ref_File, Val_File, RelValStream, RH_nHist1, RH_nHist2, RH_nHist2D, RH_nProfInd, RH_nHistTot, ref_vers, val_vers, harvest, false, false);
-
-    ProcessRelVal(Ref_File, Val_File, RelValStream, RBX_nHist1, 0, 0, 0, RBX_nHistTot, ref_vers, val_vers, harvest, true, false);
-
 
     Ref_File.Close();
     Val_File.Close();
@@ -89,31 +73,21 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 {
     prn("HistName", histName);
 
-    TCanvas* myc = 0;
-    TLegend* leg = 0;
-    TPaveText* ptchi2 = 0;
-    TPaveStats *ptstats_r = 0;
-    TPaveStats *ptstats_v = 0;
-
-    TH1F * ref_hist1[nHist1];
-    TH2F * ref_hist2[nHist2];
-    TProfile * ref_prof[nProfInd];
-    TH1D * ref_fp[nProfInd];
-    TH2F * ref_hist2D[nHist2D];
-
-    TH1F * val_hist1[nHist1];
-    TH2F * val_hist2[nHist2];
-    TProfile * val_prof[nProfInd];
-    TH1D * val_fp[nProfInd];
-    TH2F * val_hist2D[nHist2D];
-
 	//Make sure extra Profile info is also taken care of
     //if (DrawSwitch == 0) {
     //   if (dimSwitch == "TM") 
     //recstr >> ProfileLabel;
     //   continue;
     //}
-
+    
+    //split directory off histName 
+    std::string histDir = histName.substr(0, histName.rfind("/"));
+    histName = histName.substr(histName.rfind("/"), -1);
+    //Get objects from TFiles
+    TDirectory *refTD = findDirectory(&ref_file, histDir);
+    TObject *refObj = refTD->Get(histName.c_str());
+    TDirectory *valTD = findDirectory(&ref_file, histDir);
+    TObject *valObj = valTD->Get(histName.c_str());
 
     // Nasty trick:
     // recovering colors redefined in rootlogon.C (for "rainbow" Palette)
@@ -134,7 +108,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
      gStyle->SetPalette(1);
 
     //Format canvas
-    if (dimSwitch == "PRwide") {
+    if (dimSwitch.compare("PRwide") == 0) {
         gStyle->SetPadLeftMargin(0.06);
         gStyle->SetPadRightMargin(0.03);
         myc = new TCanvas("myc", "", 1200, 600);
@@ -145,24 +119,21 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
     xTitleCheck = xTitleCheck.substr(1, 7);
 
     //Format pad
-    if(logSwitch == "Log" && dimSwitch == "2D")
+    if(logSwitch.compare("Log") == 0 && dimSwitch.compare("2D") == 0)
     {
         myc->SetLogy(0);
         myc->SetLogz(1);
     }
-    else if(logSwitch == "Log")
+    else if(logSwitch.compare("Log") == 0)
     {
         myc->SetLogy(1);
     }
     
-    if (dimSwitch == "1D") 
+    if (dimSwitch.compare("1D") == 0) 
     {
-        //Get histograms from files
-        ref_file.cd(RefHistDir);
-        TH1* ref_hist1 = (TH1*) gDirectory->Get(histName);
-
-        val_file.cd(ValHistDir);
-        TH1* val_hist1 = (TH1*) gDirectory->Get(histName);
+        //Get histograms from objects
+        TH1* ref_hist1 = (TH1*)refObj;
+        TH1* val_hist1 = (TH1*)valObj;
 
         // HACK to change what is embedded in DQM histos
         ref_hist1->GetXaxis()->SetLabelSize(0.04);
@@ -196,7 +167,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         ref_hist1->SetStats(kTRUE);
         val_hist1->SetStats(kTRUE);
 
-        if (statSwitch != "Stat" && statSwitch != "Statrv") {
+        if (statSwitch.compare("Stat") != 0 && statSwitch.compare("Statrv") != 0) {
             ref_hist1->SetStats(kFALSE);
             val_hist1->SetStats(kFALSE);
         }
@@ -215,7 +186,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         if (yAxisMax > 0) ref_hist1->SetMaximum(yAxisMax);
         else if (ref_hist1->GetMaximum() < val_hist1->GetMaximum() &&
                 val_hist1->GetMaximum() > 0) {
-            if (logSwitch == "Log") ref_hist1->SetMaximum(2 * val_hist1->GetMaximum());
+            if (logSwitch.compare("Log") == 0) ref_hist1->SetMaximum(2 * val_hist1->GetMaximum());
             else ref_hist1->SetMaximum(1.05 * val_hist1->GetMaximum());
         }
 
@@ -227,27 +198,30 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         ref_hist1->SetLineColor(refCol);
         ref_hist1->SetLineStyle(1);
         ref_hist1->SetMarkerSize(0.02);
-        if (statSwitch != "Stat" && statSwitch != "Statrv") ref_hist1->SetLineWidth(2);
 
         val_hist1->SetTitle("");
         val_hist1->SetLineColor(valCol);
         val_hist1->SetLineStyle(2);
         val_hist1->SetMarkerSize(0.02);
-        if (statSwitch != "Stat" && statSwitch != "Statrv") val_hist1->SetLineWidth(2);
+        if(statSwitch.compare("Stat") != 0 && statSwitch.compare("Statrv") != 0)
+        {
+            ref_hist1->SetLineWidth(2);
+            val_hist1->SetLineWidth(2);
+        }
 
         //Legend
         TLegend *leg = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
         leg->SetBorderSize(2);
         leg->SetFillStyle(1001);
-        leg->AddEntry(ref_hist1, "CMSSW_" + ref_vers, "l");
-        leg->AddEntry(val_hist1, "CMSSW_" + val_vers, "l");
+        leg->AddEntry(ref_hist1, ("CMSSW_" + ref_vers).c_str(), "l");
+        leg->AddEntry(val_hist1, ("CMSSW_" + val_vers).c_str(), "l");
 
-        if (chi2Switch == "Chi2") {
+        if (chi2Switch.compare("Chi2") == 0) {
             //Draw and save histograms
             ref_hist1->SetFillColor(40);//42 Originally, now 40 which is lgiht brown
             ref_hist1->Draw("hist");
             val_hist1->SetLineStyle(1);
-            if (statSwitch == "Statrv") val_hist1->Draw("sames e0");
+            if (statSwitch.compare("Statrv") == 0) val_hist1->Draw("sames e0");
             else val_hist1->Draw("same e0");
 
             //Get p-value from chi2 test
@@ -271,12 +245,12 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         } else {
             //Draw and save histograms
             ref_hist1->Draw("hist");
-            if (statSwitch == "Statrv") val_hist1->Draw("hist sames");
+            if (statSwitch.compare("Statrv") == 0) val_hist1->Draw("hist sames");
             else val_hist1->Draw("hist same");
         }
 
         //Stat Box where required
-        if (statSwitch == "Stat" || statSwitch == "Statrv") {
+        if (statSwitch.compare("Stat") == 0 || statSwitch.compare("Statrv") == 0) {
             ptstats_r = new TPaveStats(0.85, 0.86, 0.98, 0.98, "brNDC");
             ptstats_r->SetTextColor(refCol);
             ref_hist1->GetListOfFunctions()->Add(ptstats_r);
@@ -292,17 +266,14 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 
         leg->Draw();
 
-        myc->SaveAs(outLabel);
+        myc->SaveAs(outLabel.c_str());
     }
     //Profiles not associated with histograms
-    else if (dimSwitch == "PR" || dimSwitch == "PRwide") 
+    else if (dimSwitch.compare("PR") == 0 || dimSwitch.compare("PRwide") == 0) 
     {
-        //Get profiles from files
-        ref_file.cd(RefHistDir);
-        TProfile* ref_prof = (TProfile*) gDirectory->Get(histName);
-
-        val_file.cd(ValHistDir);
-        TProfile* val_prof = (TProfile*) gDirectory->Get(histName);
+        //Get profiles from objects
+        TProfile* ref_prof = (TProfile*)refObj;
+        TProfile* val_prof = (TProfile*)valObj;
 
         // HACK to change what is embedded in DQM histos
         ref_prof->GetXaxis()->SetLabelSize(0.04);
@@ -332,7 +303,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         leg->SetFillStyle(1001);
 
         //Ordinary profiles
-        if (dimSwitch == "PR") 
+        if(dimSwitch.compare("PR") == 0) 
         {
             ref_prof->SetTitle("");
             ref_prof->SetErrorOption("");
@@ -342,7 +313,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 
             ref_prof->GetXaxis()->SetTitle(xAxisTitle);
 
-            if (statSwitch != "Stat" && statSwitch != "Statrv") {
+            if (statSwitch.compare("Stat") != 0 && statSwitch.compare("Statrv") != 0) {
                 ref_prof->SetStats(kFALSE);
                 val_prof->SetStats(kFALSE);
             }
@@ -363,17 +334,17 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 
             if (ref_prof->GetMaximum() < val_prof->GetMaximum() &&
                     val_prof->GetMaximum() > 0) {
-                if (logSwitch == "Log") ref_prof->SetMaximum(2 * val_prof->GetMaximum());
+                if (logSwitch.compare("Log") == 0) ref_prof->SetMaximum(2 * val_prof->GetMaximum());
                 else ref_prof->SetMaximum(1.05 * val_prof->GetMaximum());
             }
 
             ref_prof->Draw("hist pl");
             val_prof->Draw("hist pl same");
 
-            leg->AddEntry(ref_prof, "CMSSW_" + ref_vers, "pl");
-            leg->AddEntry(val_prof, "CMSSW_" + val_vers, "pl");
+            leg->AddEntry(ref_prof, ("CMSSW_" + ref_vers).c_str(), "pl");
+            leg->AddEntry(val_prof, ("CMSSW_" + val_vers).c_str(), "pl");
         }//Wide profiles
-        else if (dimSwitch == "PRwide") 
+        else if(dimSwitch.compare("PRwide") == 0)
         {
             char temp[128];
             sprintf(temp, "%s_px_v", ref_prof->GetName());
@@ -385,7 +356,8 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 
             ref_fp->GetXaxis()->SetTitle(xAxisTitle);
 
-            if (statSwitch != "Stat" && statSwitch != "Statrv") {
+            if(statSwitch.compare("Stat") != 0 && statSwitch.compare("Statrv") != 0) 
+            {
                 ref_fp->SetStats(kFALSE);
                 val_fp->SetStats(kFALSE);
             }
@@ -411,23 +383,23 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
 
             if (ref_fp->GetMaximum() < val_fp->GetMaximum() &&
                     val_fp->GetMaximum() > 0) {
-                if (logSwitch == "Log") ref_fp->SetMaximum(2 * val_fp->GetMaximum());
+                if (logSwitch.compare("Log") == 0) ref_fp->SetMaximum(2 * val_fp->GetMaximum());
                 else ref_fp->SetMaximum(1.05 * val_fp->GetMaximum());
             }
 
             ref_fp->Draw("p9");
             val_fp->Draw("p9same");
 
-            leg->AddEntry(ref_fp, "CMSSW_" + ref_vers, "lp");
-            leg->AddEntry(val_fp, "CMSSW_" + val_vers, "lp");
+            leg->AddEntry(ref_fp, ("CMSSW_" + ref_vers).c_str(), "lp");
+            leg->AddEntry(val_fp, ("CMSSW_" + val_vers).c_str(), "lp");
 
         }
 
         leg->Draw("");
 
-        myc->SaveAs(outLabel);
+        myc->SaveAs(outLabel.c_str());
     }//Timing Histograms (special: read two lines at once)
-    else if (dimSwitch == "TM") 
+    else if (dimSwitch.compare("TM") == 0) 
     {
         // This section needs extra attention
         /*
@@ -530,18 +502,15 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         npi++;
         nh2++;
         i++;*/
-    } 
-    else if (dimSwitch == "2D") 
+    }
+    else if(dimSwitch.compare("2D") == 0) 
     {
 
         myc->SetGrid(0, 0);
 
-        //Get histograms from files
-        ref_file.cd(RefHistDir);
-        TH2* ref_hist2D = (TH2*) gDirectory->Get(histName);
-
-        val_file.cd(ValHistDir);
-        TH2* val_hist2D = (TH2*) gDirectory->Get(histName);
+        //Get histograms from objects
+        TH2* ref_hist2D = (TH2*)refObj;
+        TH2* val_hist2D = (TH2*)valObj;
 
         ref_hist2D->SetStats(kFALSE);
         val_hist2D->SetStats(kFALSE);
@@ -592,23 +561,23 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         TLegend *leg1 = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
         leg1->SetBorderSize(2);
         leg1->SetFillStyle(1001);
-        leg1->AddEntry(ref_hist2D, "CMSSW_" + ref_vers, "l");
+        leg1->AddEntry(ref_hist2D, ("CMSSW_" + ref_vers).c_str(), "l");
 
         if (xTitleCheck != "NoTitle") ref_hist2D->GetXaxis()->SetTitle(xAxisTitle);
         ref_hist2D->Draw("colz");
         leg1->Draw();
-        myc->SaveAs("ref_" + outLabel);
+        myc->SaveAs("ref_" + outLabel.c_str());
 
 
         TLegend *leg2 = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
         leg2->SetBorderSize(2);
         leg2->SetFillStyle(1001);
-        leg2->AddEntry(val_hist2D, "CMSSW_" + val_vers, "l");
+        leg2->AddEntry(val_hist2D, ("CMSSW_" + val_vers).c_str(), "l");
 
         if (xTitleCheck != "NoTitle") val_hist2D->GetXaxis()->SetTitle(xAxisTitle);
         val_hist2D->Draw("colz");
         leg2->Draw();
-        myc->SaveAs("val_" + outLabel);
+        myc->SaveAs("val_" + outLabel.c_str());
     }
 
 
