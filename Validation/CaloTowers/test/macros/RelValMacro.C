@@ -17,6 +17,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <cstring>
 #include <cstdio>
 
 //#include "CombinedCaloTowers.C"
@@ -28,8 +29,10 @@ void prn(T1 s1, T2 s2)
 }
 
 void RelValMacro(std::string ref_vers, std::string val_vers, std::string rfname, std::string vfname, std::string inputStream = "InputRelVal.txt");
-void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::string val_vers, std::string histName, std::string outLabel, int nRebin, double xAxisMin, double xAxisMax, double yAxisMin, double yAxisMax,
-                   std::string dimSwitch, std::string statSwitch, std::string chi2Switch, std::string logSwitch, int refCol, int valCol, std::string xAxisTitle);
+void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::string val_vers, std::string histName, std::string outLabel, int nRebin, double xAxisMin, double xAxisMax, double yAxisMin, double yAxisMax,
+                   std::string dimSwitch, std::string statSwitch, std::string chi2Switch, std::string logSwitch, int refCol, int valCol, std::string xAxisTitle, std::string histName2 = "");
+template<class T>
+void setObjProps(T obj);
 
 class DirectoryFinder
 {
@@ -52,8 +55,7 @@ int main(int argn, char **argv)
 
 void RelValMacro(std::string ref_vers, std::string val_vers, std::string rfname, std::string vfname, std::string inputStream) 
 {
-    TFile Ref_File(rfname.c_str());
-    TFile Val_File(vfname.c_str());
+    TH1::AddDirectory(kFALSE);
 
     //File Read 
     FILE * inputFile = NULL;
@@ -62,44 +64,64 @@ void RelValMacro(std::string ref_vers, std::string val_vers, std::string rfname,
         char buff[4096];
         char *c;
 	
-	char histName[128], ofileName[128], xAxisTitle[128];
+	char histName[128], histName2[128] = "", ofileName[128], xAxisTitle[128];
 	double xAxisMin, xAxisMax, yAxisMin, yAxisMax;
 	char dimFlag[32], statFlag[32], chi2Flag[32], logFlag[32];
 	int nRebin, draw, refCol, valCol;
 
-        while(!feof(inputFile) && (c = fgets(buff, 4096, inputFile)) != NULL)
-        {            
-            //The following lines allow for comments.  The first comment character (#) will be replaced with a end of string.
-            char* k = strchr(buff, '#');
-            if(k) *k = '\0';
-            //Parse the line
-            if(sscanf(buff, "%s %d %s %d %lf %lf %lf %lf %s %s %s %s %d %d %[^\n]", histName, &draw, ofileName, &nRebin, &xAxisMin, &xAxisMax, &yAxisMin, &yAxisMax, dimFlag, statFlag, chi2Flag, logFlag, &refCol, &valCol, xAxisTitle) == 15)
-            {
-                //Skip is set not to draw
-                if(!draw) continue;
-                //Make plot
-                ProcessRelVal(Ref_File, Val_File, ref_vers, val_vers, histName, ofileName, nRebin, xAxisMin, xAxisMax, yAxisMin, yAxisMax, dimFlag, statFlag, chi2Flag, logFlag, refCol, valCol, xAxisTitle);
-            }
-        }
-        fclose(inputFile);                                                                                                                                                                                                         
+	TFile* Ref_File = new TFile(rfname.c_str());
+	TFile* Val_File = new TFile(vfname.c_str());
+
+	if(Ref_File && Val_File)
+	{
+	    while(!feof(inputFile) && (c = fgets(buff, 4096, inputFile)) != NULL)
+	    {            
+		//The following lines allow for comments.  The first comment character (#) will be replaced with a end of string.
+		char* k = strchr(buff, '#');
+		if(k) *k = '\0';
+		//Parse the line
+		if(sscanf(buff, "%s %d %s %d %lf %lf %lf %lf %s %s %s %s %d %d %[^\n]", histName, &draw, ofileName, &nRebin, &xAxisMin, &xAxisMax, &yAxisMin, &yAxisMax, dimFlag, statFlag, chi2Flag, logFlag, &refCol, &valCol, xAxisTitle) == 15)
+		{
+		    //Skip is set not to draw
+		    if(!draw) continue;
+                
+		    //Ugly hack for the timing plots, this should be fixed 
+		    if(strcmp(dimFlag, "TM") == 0)
+		    {
+			fgets(buff, 4096, inputFile);
+			sscanf(buff, "%s", histName2);
+		    }
+                
+		    //Make plot
+		    //temporary hack
+		    ProcessRelVal(Ref_File, Val_File, ref_vers, val_vers, histName, ofileName, nRebin, xAxisMin, xAxisMax, yAxisMin, yAxisMax, dimFlag, statFlag, chi2Flag, logFlag, refCol, valCol, xAxisTitle, histName2);
+		}
+	    }
+	}
+	else
+	{
+	    if(!Ref_File) std::cout << "Input root file \"" << rfname << "\" not found!!!" << std::endl;
+	    if(!Val_File) std::cout << "Input root file \"" << vfname << "\" not found!!!" << std::endl;
+	}
+        fclose(inputFile);
+	
+	Ref_File->Close();
+	Val_File->Close();
     }
     else
     {
-        std::cout << "Input file not found!!!" << std::endl;
+        std::cout << "Input file \"" << inputStream << "\" not found!!!" << std::endl;
     }
 
 //    ProcessSubDetCT(Ref_File, Val_File, RelValStream, CT_nHist1, CT_nHist2, CT_nProf, CT_nHistTot, ref_vers, val_vers, harvest);
 
-    Ref_File.Close();
-    Val_File.Close();
-
     return;
 }
 
-void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::string val_vers, std::string histName, std::string outLabel, int nRebin, double xAxisMin, double xAxisMax, double yAxisMin, double yAxisMax,
-                   std::string dimSwitch, std::string statSwitch, std::string chi2Switch, std::string logSwitch, int refCol, int valCol, std::string xAxisTitle)
+void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::string val_vers, std::string histName, std::string outLabel, int nRebin, double xAxisMin, double xAxisMax, double yAxisMin, double yAxisMax,
+                   std::string dimSwitch, std::string statSwitch, std::string chi2Switch, std::string logSwitch, int refCol, int valCol, std::string xAxisTitle, std::string histName2)
 {
-    prn("HistName", histName);
+    //prn("HistName", histName);
 
 	//Make sure extra Profile info is also taken care of
     //if (DrawSwitch == 0) {
@@ -114,12 +136,36 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
     if(slashLoc < histName.size() - 1) histName = histName.substr(slashLoc + 1, histName.size());
 
     //Get objects from TFiles
-    TDirectory *refTD = dfRef(&ref_file, histDir);
-    TObject *refObj = refTD->Get(histName.c_str());
-    TDirectory *valTD = dfVal(&val_file, histDir);
-    TObject *valObj = valTD->Get(histName.c_str());
+    TDirectory *refTD = dfRef(ref_file, histDir);
+    std::cout << refTD << std::endl;
+    TObject *refObj = 0;
+    /*if(refTD) refObj = refTD->Get(histName.c_str())->Clone();
+    else 
+    {
+	std::cout << "Cannot find directory \"" << histDir << "\" in file \"" << ref_file->GetName() << "\"" << std::endl;
+	return;
+    }
+    if(!refObj)
+    {
+	std::cout << "Cannot find histogram \"" << histDir << "\\" << histName << "\" in file \"" << ref_file->GetName() << "\"" << std::endl;
+	return;
+    }*/
 
-    // Nasty trick:
+    TDirectory *valTD = dfVal(val_file, histDir);
+    TObject *valObj = 0;
+    /*if(valTD) valObj = valTD->Get(histName.c_str())->Clone();
+    else
+    {
+	std::cout << "Cannot find directory \"" << histDir << "\" in file \"" << val_file->GetName() << "\"" << std::endl;
+	return;
+    }
+    if(!refObj)
+    {
+	std::cout << "Cannot find histogram \"" << histDir << "\\" << histName << "\" in file \"" << val_file->GetName() << "\"" << std::endl;
+	return;
+    }*/
+
+/*    // Nasty trick:
     // recovering colors redefined in rootlogon.C (for "rainbow" Palette)
     Float_t r, g, b;
     Float_t saturation = 1;
@@ -129,12 +175,12 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
     Int_t maxPretty = 50;
     Float_t hue;
 
-    /*for (int j = 0; j < maxPretty; j++) {
-        hue = maxHue - (j + 1)*((maxHue - minHue) / maxPretty);
-        TColor::HLStoRGB(hue, lightness, saturation, r, g, b);
-        TColor *color = (TColor*) (gROOT->GetListOfColors()->At(j + 51));
-        color->SetRGB(r, g, b);
-	}*/
+//    for (int j = 0; j < maxPretty; j++) {
+//        hue = maxHue - (j + 1)*((maxHue - minHue) / maxPretty);
+//        TColor::HLStoRGB(hue, lightness, saturation, r, g, b);
+//        TColor *color = (TColor*) (gROOT->GetListOfColors()->At(j + 51));
+//        color->SetRGB(r, g, b);
+//	}
      gStyle->SetPalette(1);
 
     //Format canvas
@@ -166,27 +212,9 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         TH1* ref_hist1 = (TH1*)refObj;
         TH1* val_hist1 = (TH1*)valObj;
 
-        // HACK to change what is embedded in DQM histos
-        ref_hist1->GetXaxis()->SetLabelSize(0.04);
-        val_hist1->GetXaxis()->SetLabelSize(0.04);
-        ref_hist1->GetYaxis()->SetLabelSize(0.04);
-        val_hist1->GetYaxis()->SetLabelSize(0.04);
-        ref_hist1->GetXaxis()->SetTitleSize(0.045);
-        val_hist1->GetXaxis()->SetTitleSize(0.045);
-
-        ref_hist1->GetXaxis()->SetTickLength(-0.015);
-        val_hist1->GetXaxis()->SetTickLength(-0.015);
-        ref_hist1->GetYaxis()->SetTickLength(-0.015);
-        val_hist1->GetYaxis()->SetTickLength(-0.015);
-
-        ref_hist1->GetXaxis()->SetLabelOffset(0.02);
-        val_hist1->GetXaxis()->SetLabelOffset(0.02);
-        ref_hist1->GetYaxis()->SetLabelOffset(0.02);
-        val_hist1->GetYaxis()->SetLabelOffset(0.02);
-
-        ref_hist1->GetXaxis()->SetTitleOffset(1.3);
-        val_hist1->GetXaxis()->SetTitleOffset(1.3);
-
+        // change what is embedded in DQM histos
+        setObjProps(ref_hist1);
+        setObjProps(val_hist1);
 
         //Rebin histograms -- has to be done first
         if (nRebin != 1) {
@@ -307,26 +335,8 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         TProfile* val_prof = (TProfile*)valObj;
 
         // HACK to change what is embedded in DQM histos
-        ref_prof->GetXaxis()->SetLabelSize(0.04);
-        val_prof->GetXaxis()->SetLabelSize(0.04);
-        ref_prof->GetYaxis()->SetLabelSize(0.04);
-        val_prof->GetYaxis()->SetLabelSize(0.04);
-        ref_prof->GetXaxis()->SetTitleSize(0.045);
-        val_prof->GetXaxis()->SetTitleSize(0.045);
-
-        ref_prof->GetXaxis()->SetTickLength(-0.015);
-        val_prof->GetXaxis()->SetTickLength(-0.015);
-        ref_prof->GetYaxis()->SetTickLength(-0.015);
-        val_prof->GetYaxis()->SetTickLength(-0.015);
-
-        ref_prof->GetXaxis()->SetLabelOffset(0.02);
-        val_prof->GetXaxis()->SetLabelOffset(0.02);
-        ref_prof->GetYaxis()->SetLabelOffset(0.02);
-        val_prof->GetYaxis()->SetLabelOffset(0.02);
-
-        ref_prof->GetXaxis()->SetTitleOffset(1.3);
-        val_prof->GetXaxis()->SetTitleOffset(1.3);
-
+        setObjProps(ref_prof);
+        setObjProps(val_prof);
 
         //Legend
         TLegend* leg = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
@@ -432,107 +442,91 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
     }//Timing Histograms (special: read two lines at once)
     else if (dimSwitch.compare("TM") == 0) 
     {
-        // This section needs extra attention
-        /*
-        recstr >> HistName2;
+        //split directory off histName 
+        int slashLoc2 = histName2.rfind("/");
+        std::string histDir2 = histName2.substr(0, slashLoc2);
+        if(slashLoc2 < histName2.size() - 1) histName2 = histName2.substr(slashLoc2 + 1, histName2.size());
 
-        ref_file.cd(RefHistDir);
+        //Get objects from TFiles
+        TDirectory *refTD2 = dfRef(ref_file, histDir2);
+        TObject *refObj2 = refTD->Get(histName2.c_str())->Clone();
+        TDirectory *valTD2 = dfVal(val_file, histDir2);
+        TObject *valObj2 = valTD->Get(histName2.c_str())->Clone();
 
-        ref_hist2[nh2] = (TH2F*) gDirectory->Get(histName);
-        ref_prof = (TProfile*) gDirectory->Get(HistName2);
+        TH2* ref_hist2 = (TH2*)refObj;
+        TProfile* ref_prof = (TProfile*)refObj2;
 
-        ref_hist2[nh2]->SetMarkerStyle(21);
+        ref_hist2->SetMarkerStyle(21);
         ref_prof ->SetMarkerStyle(21);
-        ref_hist2[nh2]->SetMarkerSize(0.02);
+        ref_hist2->SetMarkerSize(0.02);
         ref_prof ->SetMarkerSize(0.02);
 
-        val_file.cd(ValHistDir);
+        TH2* val_hist2 = (TH2F*)valObj;
+        TProfile* val_prof = (TProfile*)valObj2;
 
-        val_hist2[nh2] = (TH2F*) gDirectory->Get(histName);
-        val_prof = (TProfile*) gDirectory->Get(HistName2);
-
-        val_hist2[nh2]->SetMarkerStyle(21);
+        val_hist2->SetMarkerStyle(21);
         val_prof ->SetMarkerStyle(21);
-        val_hist2[nh2]->SetMarkerSize(0.02);
+        val_hist2->SetMarkerSize(0.02);
         val_prof ->SetMarkerSize(0.02);
 
         // HACK to change what is embedded in DQM histos
-        ref_hist2[nh2]->GetXaxis()->SetLabelSize(0.04);
-        val_hist2[nh2]->GetXaxis()->SetLabelSize(0.04);
-        ref_hist2[nh2]->GetYaxis()->SetLabelSize(0.04);
-        val_hist2[nh2]->GetYaxis()->SetLabelSize(0.04);
-        ref_hist2[nh2]->GetXaxis()->SetTitleSize(0.045);
-        val_hist2[nh2]->GetXaxis()->SetTitleSize(0.045);
-
-        ref_hist2[nh2]->GetXaxis()->SetTickLength(-0.015);
-        val_hist2[nh2]->GetXaxis()->SetTickLength(-0.015);
-        ref_hist2[nh2]->GetYaxis()->SetTickLength(-0.015);
-        val_hist2[nh2]->GetYaxis()->SetTickLength(-0.015);
-
-        ref_hist2[nh2]->GetXaxis()->SetLabelOffset(0.02);
-        val_hist2[nh2]->GetXaxis()->SetLabelOffset(0.02);
-        ref_hist2[nh2]->GetYaxis()->SetLabelOffset(0.02);
-        val_hist2[nh2]->GetYaxis()->SetLabelOffset(0.02);
-
-        ref_hist2[nh2]->GetXaxis()->SetTitleOffset(1.3);
-        val_hist2[nh2]->GetXaxis()->SetTitleOffset(1.3);
-
+        setObjProps(ref_hist2);
+        setObjProps(val_hist2);
 
         //Min/Max Convention: Default AxisMin = 0. Default AxisMax = -1.
         //xAxis
-        if (xAxisMin == 0) xAxisMin = ref_hist2[nh2]->GetXaxis()->GetXmin();
-        if (xAxisMax < 0) xAxisMax = ref_hist2[nh2]->GetXaxis()->GetXmax();
+        if (xAxisMin == 0) xAxisMin = ref_hist2->GetXaxis()->GetXmin();
+        if (xAxisMax < 0) xAxisMax = ref_hist2->GetXaxis()->GetXmax();
 
         if (xAxisMax > 0 || xAxisMin != 0) {
-            ref_hist2[nh2]->GetXaxis()->SetRangeUser(xAxisMin, xAxisMax);
-            val_hist2[nh2]->GetXaxis()->SetRangeUser(xAxisMin, xAxisMax);
+            ref_hist2->GetXaxis()->SetRangeUser(xAxisMin, xAxisMax);
+            val_hist2->GetXaxis()->SetRangeUser(xAxisMin, xAxisMax);
         }
         //yAxis
-        if (yAxisMin != 0) ref_hist2[nh2]->SetMinimum(yAxisMin);
-        if (yAxisMax > 0) ref_hist2[nh2]->SetMaximum(yAxisMax);
-        else if (ref_hist2[nh2]->GetMaximum() < val_hist2[nh2]->GetMaximum() &&
-                val_hist2[nh2]->GetMaximum() > 0) {
-            if (logSwitch == "Log") ref_hist2[nh2]->SetMaximum(2 * val_hist2[nh2]->GetMaximum());
-            else ref_hist2[nh2]->SetMaximum(1.05 * val_hist2[nh2]->GetMaximum());
+        if (yAxisMin != 0) ref_hist2->SetMinimum(yAxisMin);
+        if (yAxisMax > 0) ref_hist2->SetMaximum(yAxisMax);
+        else if (ref_hist2->GetMaximum() < val_hist2->GetMaximum() &&
+                val_hist2->GetMaximum() > 0) {
+            if (logSwitch == "Log") ref_hist2->SetMaximum(2 * val_hist2->GetMaximum());
+            else ref_hist2->SetMaximum(1.05 * val_hist2->GetMaximum());
         }
 
         //AF
         if (yAxisMax > 0 || yAxisMin != 0) {
-            ref_hist2[nh2]->GetYaxis()->SetRangeUser(yAxisMin, yAxisMax);
-            val_hist2[nh2]->GetYaxis()->SetRangeUser(yAxisMin, yAxisMax);
+            ref_hist2->GetYaxis()->SetRangeUser(yAxisMin, yAxisMax);
+            val_hist2->GetYaxis()->SetRangeUser(yAxisMin, yAxisMax);
         }
 
         //Legend
-        leg = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
+        TLegend* leg = new TLegend(0.50, 0.91, 0.84, 0.99, "", "brNDC");
         leg->SetBorderSize(2);
         leg->SetFillStyle(1001);
 
-        ref_hist2[nh2]->GetXaxis()->SetTitle(xAxisTitle);
-        ref_hist2[nh2]->SetStats(kFALSE);
+        ref_hist2->GetXaxis()->SetTitle(xAxisTitle.c_str());
+        ref_hist2->SetStats(kFALSE);
 
-    ref_hist2[nh2]->SetTitle("");
-        val_hist2[nh2]->SetTitle("");
+        ref_hist2->SetTitle("");
+        val_hist2->SetTitle("");
 
-        ref_hist2[nh2]->SetMarkerColor(refCol); // rose
-        ref_hist2[nh2]->Draw();
+        ref_hist2->SetMarkerColor(refCol); // rose
+        ref_hist2->Draw();
         ref_prof->SetLineColor(41);
         ref_prof->Draw("same");
 
-        val_hist2[nh2]->SetMarkerColor(valCol);
-        val_hist2[nh2]->Draw("same");
+        val_hist2->SetMarkerColor(valCol);
+        val_hist2->Draw("same");
         val_prof->SetLineColor(45);
         val_prof->Draw("same");
 
-        leg->AddEntry(ref_prof, "CMSSW_" + ref_vers, "pl");
-        leg->AddEntry(val_prof, "CMSSW_" + val_vers, "pl");
+        leg->AddEntry(ref_prof, ("CMSSW_" + ref_vers).c_str(), "pl");
+	leg->AddEntry(val_prof, ("CMSSW_" + val_vers).c_str(), "pl");
 
         leg->Draw("");
 
-        myc->SaveAs(outLabel);
+        myc->SaveAs(outLabel.c_str());
 
-        npi++;
-        nh2++;
-        i++;*/
+	if(refObj2) delete refObj2;
+	if(valObj2) delete valObj2;
     }
     else if(dimSwitch.compare("2D") == 0) 
     {
@@ -547,25 +541,8 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         val_hist2D->SetStats(kFALSE);
 
         // HACK to change what is embedded in DQM histos
-        ref_hist2D->GetXaxis()->SetLabelSize(0.04);
-        val_hist2D->GetXaxis()->SetLabelSize(0.04);
-        ref_hist2D->GetYaxis()->SetLabelSize(0.04);
-        val_hist2D->GetYaxis()->SetLabelSize(0.04);
-        ref_hist2D->GetXaxis()->SetTitleSize(0.045);
-        val_hist2D->GetXaxis()->SetTitleSize(0.045);
-
-        ref_hist2D->GetXaxis()->SetTickLength(-0.015);
-        val_hist2D->GetXaxis()->SetTickLength(-0.015);
-        ref_hist2D->GetYaxis()->SetTickLength(-0.015);
-        val_hist2D->GetYaxis()->SetTickLength(-0.015);
-
-        ref_hist2D->GetXaxis()->SetLabelOffset(0.02);
-        val_hist2D->GetXaxis()->SetLabelOffset(0.02);
-        ref_hist2D->GetYaxis()->SetLabelOffset(0.02);
-        val_hist2D->GetYaxis()->SetLabelOffset(0.02);
-
-        ref_hist2D->GetXaxis()->SetTitleOffset(1.3);
-        val_hist2D->GetXaxis()->SetTitleOffset(1.3);
+        setObjProps(ref_hist2D);
+        setObjProps(val_hist2D);
 
         ref_hist2D->SetTitle("");
         val_hist2D->SetTitle("");
@@ -608,16 +585,18 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, std::string ref_vers, std::
         leg2->Draw();
         myc->SaveAs(("val_" + outLabel).c_str());
     }
-
-    delete myc;
+*/
+//    delete myc;
+    if(refObj) delete refObj;
+    if(valObj) delete valObj;
 
     return;
 }
 
 TDirectory* DirectoryFinder::operator()(TDirectory *target, std::string& s)
 {
-    if(ptdMap[s] == 0) return (ptdMap[s] = findDirectory(target, s));
-    else               return ptdMap[s];
+    if(ptdMap.find(s) == ptdMap.end()) return (ptdMap[s] = findDirectory(target, s));
+    else                               return ptdMap[s];
 }
 
 TDirectory* DirectoryFinder::findDirectory( TDirectory *target, std::string& s)
@@ -633,7 +612,7 @@ TDirectory* DirectoryFinder::findDirectory( TDirectory *target, std::string& s)
 	if (oldkey && !strcmp(oldkey->GetName(),key->GetName())) continue;
 
 	// read object from file                                                                                                                                                                                                             
-	target->cd();
+//	target->cd();
 	TObject *obj = key->ReadObj();
 
 	if(obj->IsA()->InheritsFrom(TDirectory::Class()))
@@ -645,7 +624,26 @@ TDirectory* DirectoryFinder::findDirectory( TDirectory *target, std::string& s)
 	    if((retval = findDirectory((TDirectory*)obj, s))) break;
 
 	}
+	else
+	{
+	}
     }
 
     return retval;
+}
+
+template<class T>
+void setObjProps(T obj)
+{
+    obj->GetXaxis()->SetLabelSize(0.04);
+    obj->GetYaxis()->SetLabelSize(0.04);
+    obj->GetXaxis()->SetTitleSize(0.045);
+
+    obj->GetXaxis()->SetTickLength(-0.015);
+    obj->GetYaxis()->SetTickLength(-0.015);
+
+    obj->GetXaxis()->SetLabelOffset(0.02);
+    obj->GetYaxis()->SetLabelOffset(0.02);
+    
+    obj->GetXaxis()->SetTitleOffset(1.3);
 }
