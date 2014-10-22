@@ -102,8 +102,8 @@ cd ../
 
 
 #Process Startup TTbar
-#root -b -l -q 'RelValMacro.C("'${OLD_VERS}_Startup'","'${NEW_VERS}_Startup'","'HcalRecHitValidationRelVal_TTbar_Startup_${OLD_VERS}.root'","'HcalRecHitValidationRelVal_TTbar_Startup_${NEW_VERS}.root'","InputRelVal_Medium.txt")'
-./RelValMacro.exe ${OLD_VERS}_Startup ${NEW_VERS}_Startup HcalRecHitValidationRelVal_TTbar_Startup_${OLD_VERS}.root HcalRecHitValidationRelVal_TTbar_Startup_${NEW_VERS}.root InputRelVal_Medium.txt
+#root -b -l -q 'RelValMacro.C("'${OLD_VERS}_Startup'","'${NEW_VERS}_Startup'","'HcalRecHitValidationRelVal_TTbar_${OLD_VERS}.root'","'HcalRecHitValidationRelVal_TTbar_${NEW_VERS}.root'","InputRelVal_Medium.txt")'
+./RelValMacro.exe ${OLD_VERS} ${NEW_VERS} HcalRecHitValidationRelVal_TTbar_${OLD_VERS}.root HcalRecHitValidationRelVal_TTbar_${NEW_VERS}.root InputRelVal_Medium.txt
 
 mv *HcalDigi*.gif   ${NEW_VERS}_vs_${OLD_VERS}_RelVal/TTbar/HcalDigis/
 mv *CaloTowers*.gif ${NEW_VERS}_vs_${OLD_VERS}_RelVal/TTbar/CaloTowers/
@@ -111,8 +111,8 @@ mv RBX*gif          ${NEW_VERS}_vs_${OLD_VERS}_RelVal/TTbar/RBX/
 mv *gif             ${NEW_VERS}_vs_${OLD_VERS}_RelVal/TTbar/RecHits/
 
 #Process Startup QCD
-#root -b -l -q 'RelValMacro.C("'${OLD_VERS}_Startup'","'${NEW_VERS}_Startup'","'HcalRecHitValidationRelVal_QCD_Startup_${OLD_VERS}.root'","'HcalRecHitValidationRelVal_QCD_Startup_${NEW_VERS}.root'","InputRelVal_Medium.txt")'
-./RelValMacro.exe ${OLD_VERS}_Startup ${NEW_VERS}_Startup HcalRecHitValidationRelVal_QCD_Startup_${OLD_VERS}.root HcalRecHitValidationRelVal_QCD_Startup_${NEW_VERS}.root InputRelVal_Medium.txt
+#root -b -l -q 'RelValMacro.C("'${OLD_VERS}_Startup'","'${NEW_VERS}_Startup'","'HcalRecHitValidationRelVal_QCD_${OLD_VERS}.root'","'HcalRecHitValidationRelVal_QCD_${NEW_VERS}.root'","InputRelVal_Medium.txt")'
+./RelValMacro.exe ${OLD_VERS} ${NEW_VERS} HcalRecHitValidationRelVal_QCD_${OLD_VERS}.root HcalRecHitValidationRelVal_QCD_${NEW_VERS}.root InputRelVal_Medium.txt
 
 mv *HcalDigi*.gif   ${NEW_VERS}_vs_${OLD_VERS}_RelVal/QCD/HcalDigis/
 mv *CaloTowers*.gif ${NEW_VERS}_vs_${OLD_VERS}_RelVal/QCD/CaloTowers/
@@ -120,8 +120,8 @@ mv RBX*gif          ${NEW_VERS}_vs_${OLD_VERS}_RelVal/QCD/RBX/
 mv *gif             ${NEW_VERS}_vs_${OLD_VERS}_RelVal/QCD/RecHits/
 
 #Process Startup HighPtQCD
-#root -b -l -q 'RelValMacro.C("'${OLD_VERS}_Startup'","'${NEW_VERS}_Startup'","'HcalRecHitValidationRelVal_HighPtQCD_Startup_${OLD_VERS}.root'","'HcalRecHitValidationRelVal_HighPtQCD_Startup_${NEW_VERS}.root'","InputRelVal_High.txt")'
-./RelValMacro.exe ${OLD_VERS}_Startup ${NEW_VERS}_Startup HcalRecHitValidationRelVal_HighPtQCD_Startup_${OLD_VERS}.root HcalRecHitValidationRelVal_HighPtQCD_Startup_${NEW_VERS}.root InputRelVal_High.tx
+#root -b -l -q 'RelValMacro.C("'${OLD_VERS}_Startup'","'${NEW_VERS}_Startup'","'HcalRecHitValidationRelVal_HighPtQCD_${OLD_VERS}.root'","'HcalRecHitValidationRelVal_HighPtQCD_${NEW_VERS}.root'","InputRelVal_High.txt")'
+./RelValMacro.exe ${OLD_VERS} ${NEW_VERS} HcalRecHitValidationRelVal_HighPtQCD_${OLD_VERS}.root HcalRecHitValidationRelVal_HighPtQCD_${NEW_VERS}.root InputRelVal_High.txt
 
 mv *HcalDigi*.gif   ${NEW_VERS}_vs_${OLD_VERS}_RelVal/HighPtQCD/HcalDigis/
 mv *CaloTowers*.gif ${NEW_VERS}_vs_${OLD_VERS}_RelVal/HighPtQCD/CaloTowers/
@@ -129,8 +129,8 @@ mv RBX*gif          ${NEW_VERS}_vs_${OLD_VERS}_RelVal/HighPtQCD/RBX/
 mv *gif             ${NEW_VERS}_vs_${OLD_VERS}_RelVal/HighPtQCD/RecHits/
 
 #Process Startup MinBias
-#root -b -l -q 'RelValMacro.C("'${OLD_VERS}_Startup'","'${NEW_VERS}_Startup'","'HcalRecHitValidationRelVal_MinBias_Startup_${OLD_VERS}.root'","'HcalRecHitValidationRelVal_MinBias_Startup_${NEW_VERS}.root'","InputRelVal_Low.txt")'
-./RelValMacro.exe ${OLD_VERS}_Startup ${NEW_VERS}_Startup HcalRecHitValidationRelVal_MinBias_Startup_${OLD_VERS}.root HcalRecHitValidationRelVal_MinBias_Startup_${NEW_VERS}.root InputRelVal_Low.txt
+#root -b -l -q 'RelValMacro.C("'${OLD_VERS}'","'${NEW_VERS}'","'HcalRecHitValidationRelVal_MinBias_${OLD_VERS}.root'","'HcalRecHitValidationRelVal_MinBias_${NEW_VERS}.root'","InputRelVal_Low.txt")'
+./RelValMacro.exe ${OLD_VERS} ${NEW_VERS} HcalRecHitValidationRelVal_MinBias_${OLD_VERS}.root HcalRecHitValidationRelVal_MinBias_${NEW_VERS}.root InputRelVal_Low.txt
 
 mv *HcalDigi*.gif   ${NEW_VERS}_vs_${OLD_VERS}_RelVal/MinBias/HcalDigis/
 mv *CaloTowers*.gif ${NEW_VERS}_vs_${OLD_VERS}_RelVal/MinBias/CaloTowers/
@@ -138,7 +138,10 @@ mv RBX*gif          ${NEW_VERS}_vs_${OLD_VERS}_RelVal/MinBias/RBX/
 mv *gif             ${NEW_VERS}_vs_${OLD_VERS}_RelVal/MinBias/RecHits/
 
 #Process single pions
-root -b -l -q 'SinglePi.C("'${OLD_VERS}'","'${NEW_VERS}'")'
-mv *gif                 ${NEW_VERS}_vs_${OLD_VERS}_RelVal/SinglePi50_ECAL+HCAL_Scan
+
+set OLV = `echo ${OLD_VERS} | sed 's/\([^_]*\).*/\1/'`
+set NWV = `echo ${NEW_VERS} | sed 's/\([^_]*\).*/\1/'`
+./SinglePi.exe ${OLV} ${NWV}
+mv *gif  ${NEW_VERS}_vs_${OLD_VERS}_RelVal/SinglePi50_ECAL+HCAL_Scan
 
 exit

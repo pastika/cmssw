@@ -57,6 +57,33 @@ void RelValMacro(std::string ref_vers, std::string val_vers, std::string rfname,
 {
     TH1::AddDirectory(kFALSE);
 
+    gStyle->SetCanvasBorderMode(0);
+    gStyle->SetCanvasColor(432-10);//kCyan-10  //formerly 52
+    gStyle->SetTitleSize(0.06, "XYZ");
+    gStyle->SetTitleXOffset(0.9);
+    gStyle->SetTitleYOffset(1.25);
+
+    gStyle->SetLabelOffset(0.007, "XYZ");
+    gStyle->SetLabelSize(0.05, "XYZ");
+
+ 
+    gStyle->SetTitle("");
+    gStyle->SetOptTitle(0);
+ 
+    gStyle->SetHistLineColor(0);//45
+    gStyle->SetHistLineStyle(1);
+    gStyle->SetHistLineWidth(2);
+
+    gStyle->SetPadColor(0);//52  
+    gStyle->SetPadBorderSize(1); 
+    gStyle->SetPadBottomMargin(0.15);
+    gStyle->SetPadTopMargin(0.1);
+    gStyle->SetPadLeftMargin(0.15);
+    gStyle->SetPadRightMargin(0.15);
+    gStyle->SetFrameBorderMode(0);
+    gStyle->SetFrameFillColor(10);//55
+
+
     //File Read 
     FILE * inputFile = NULL;
     if((inputFile = fopen(inputStream.c_str(), "r")))
@@ -93,7 +120,6 @@ void RelValMacro(std::string ref_vers, std::string val_vers, std::string rfname,
 		    }
                 
 		    //Make plot
-		    //temporary hack
 		    ProcessRelVal(Ref_File, Val_File, ref_vers, val_vers, histName, ofileName, nRebin, xAxisMin, xAxisMax, yAxisMin, yAxisMax, dimFlag, statFlag, chi2Flag, logFlag, refCol, valCol, xAxisTitle, histName2);
 		}
 	    }
@@ -121,15 +147,6 @@ void RelValMacro(std::string ref_vers, std::string val_vers, std::string rfname,
 void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::string val_vers, std::string histName, std::string outLabel, int nRebin, double xAxisMin, double xAxisMax, double yAxisMin, double yAxisMax,
                    std::string dimSwitch, std::string statSwitch, std::string chi2Switch, std::string logSwitch, int refCol, int valCol, std::string xAxisTitle, std::string histName2)
 {
-    //prn("HistName", histName);
-
-	//Make sure extra Profile info is also taken care of
-    //if (DrawSwitch == 0) {
-    //   if (dimSwitch == "TM") 
-    //recstr >> ProfileLabel;
-    //   continue;
-    //}
-    
     //split directory off histName 
     int slashLoc = histName.rfind("/");
     std::string histDir = histName.substr(0, slashLoc);
@@ -137,9 +154,8 @@ void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::
 
     //Get objects from TFiles
     TDirectory *refTD = dfRef(ref_file, histDir);
-    std::cout << refTD << std::endl;
     TObject *refObj = 0;
-    /*if(refTD) refObj = refTD->Get(histName.c_str())->Clone();
+    if(refTD) refObj = refTD->Get(histName.c_str())->Clone();
     else 
     {
 	std::cout << "Cannot find directory \"" << histDir << "\" in file \"" << ref_file->GetName() << "\"" << std::endl;
@@ -149,11 +165,11 @@ void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::
     {
 	std::cout << "Cannot find histogram \"" << histDir << "\\" << histName << "\" in file \"" << ref_file->GetName() << "\"" << std::endl;
 	return;
-    }*/
+    }
 
     TDirectory *valTD = dfVal(val_file, histDir);
     TObject *valObj = 0;
-    /*if(valTD) valObj = valTD->Get(histName.c_str())->Clone();
+    if(valTD) valObj = valTD->Get(histName.c_str())->Clone();
     else
     {
 	std::cout << "Cannot find directory \"" << histDir << "\" in file \"" << val_file->GetName() << "\"" << std::endl;
@@ -163,25 +179,26 @@ void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::
     {
 	std::cout << "Cannot find histogram \"" << histDir << "\\" << histName << "\" in file \"" << val_file->GetName() << "\"" << std::endl;
 	return;
-    }*/
+    }
 
-/*    // Nasty trick:
+    // Nasty trick:
     // recovering colors redefined in rootlogon.C (for "rainbow" Palette)
     Float_t r, g, b;
     Float_t saturation = 1;
     Float_t lightness = 0.5;
     Float_t maxHue = 280;
     Float_t minHue = 0;
-    Int_t maxPretty = 50;
+    const Int_t maxPretty = 50;
     Float_t hue;
+    int colors[maxPretty];
 
-//    for (int j = 0; j < maxPretty; j++) {
-//        hue = maxHue - (j + 1)*((maxHue - minHue) / maxPretty);
-//        TColor::HLStoRGB(hue, lightness, saturation, r, g, b);
-//        TColor *color = (TColor*) (gROOT->GetListOfColors()->At(j + 51));
-//        color->SetRGB(r, g, b);
-//	}
-     gStyle->SetPalette(1);
+    for (int j = 0; j < maxPretty; j++) 
+    {
+        hue = maxHue - (j + 1)*((maxHue - minHue) / maxPretty);
+        TColor::HLStoRGB(hue, lightness, saturation, r, g, b);
+	colors[j] = TColor::GetColor(r, g, b);
+    }
+    gStyle->SetPalette(maxPretty, colors);
 
     //Format canvas
     TCanvas *myc = 0;
@@ -585,8 +602,8 @@ void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::
         leg2->Draw();
         myc->SaveAs(("val_" + outLabel).c_str());
     }
-*/
-//    delete myc;
+
+    if(myc) delete myc;
     if(refObj) delete refObj;
     if(valObj) delete valObj;
 
@@ -614,11 +631,13 @@ TDirectory* DirectoryFinder::findDirectory( TDirectory *target, std::string& s)
 	// read object from file                                                                                                                                                                                                             
 //	target->cd();
 	TObject *obj = key->ReadObj();
+//	obj->Print();
 
 	if(obj->IsA()->InheritsFrom(TDirectory::Class()))
 	{
 	    // it's a subdirectory                                                                                                                                                                                                           
-	    //cout << "Found subdirectory " << obj->GetName() << endl;                                                                                                                                                                       
+	    //std::cout << "Found subdirectory " << obj->GetName() << std::endl;
+
 	    if(strcmp(s.c_str(), obj->GetName()) == 0) return (TDirectory*)obj;
 
 	    if((retval = findDirectory((TDirectory*)obj, s))) break;
@@ -626,6 +645,7 @@ TDirectory* DirectoryFinder::findDirectory( TDirectory *target, std::string& s)
 	}
 	else
 	{
+	    break;
 	}
     }
 
