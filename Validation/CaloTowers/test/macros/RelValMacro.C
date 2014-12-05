@@ -68,13 +68,13 @@ void RelValMacro(TString ref_vers = "218", TString val_vers = "218", TString rfn
     const int RBX_nHistTot = 6;
     const int RBX_nHist1 = 5;
 
-    ProcessRelVal(Ref_File, Val_File, RelValStream, HD_nHist1, HD_nHist2, HD_nHist2D, HD_nProfInd, HD_nHistTot, ref_vers, val_vers, harvest, false, true);
+//    ProcessRelVal(Ref_File, Val_File, RelValStream, HD_nHist1, HD_nHist2, HD_nHist2D, HD_nProfInd, HD_nHistTot, ref_vers, val_vers, harvest, false, true);
 
-    ProcessSubDetCT(Ref_File, Val_File, RelValStream, CT_nHist1, CT_nHist2, CT_nProf, CT_nHistTot, ref_vers, val_vers, harvest);
+//    ProcessSubDetCT(Ref_File, Val_File, RelValStream, CT_nHist1, CT_nHist2, CT_nProf, CT_nHistTot, ref_vers, val_vers, harvest);
 
-    ProcessRelVal(Ref_File, Val_File, RelValStream, RH_nHist1, RH_nHist2, RH_nHist2D, RH_nProfInd, RH_nHistTot, ref_vers, val_vers, harvest, false, false);
+    ProcessRelVal(Ref_File, Val_File, RelValStream, RH_nHist1, RH_nHist2, RH_nHist2D, RH_nProfInd, RH_nHistTot, ref_vers, val_vers, harvest, false, false, true);
 
-    ProcessRelVal(Ref_File, Val_File, RelValStream, RBX_nHist1, 0, 0, 0, RBX_nHistTot, ref_vers, val_vers, harvest, true, false);
+//    ProcessRelVal(Ref_File, Val_File, RelValStream, RBX_nHist1, 0, 0, 0, RBX_nHistTot, ref_vers, val_vers, harvest, true, false);
 
 
     Ref_File.Close();
@@ -83,7 +83,7 @@ void RelValMacro(TString ref_vers = "218", TString val_vers = "218", TString rfn
     return;
 }
 
-void ProcessRelVal(TFile &ref_file, TFile &val_file, ifstream &recstr, const int nHist1, const int nHist2, const int nHist2D, const int nProfInd, const int nHistTot, TString ref_vers, TString val_vers, int harvest, bool bRBX, bool bHD = false) {
+void ProcessRelVal(TFile &ref_file, TFile &val_file, ifstream &recstr, const int nHist1, const int nHist2, const int nHist2D, const int nProfInd, const int nHistTot, TString ref_vers, TString val_vers, int harvest, bool bRBX, bool bHD = false, bool makpn = false) {
 
     TString RefHistDir, ValHistDir;
 
@@ -186,6 +186,7 @@ void ProcessRelVal(TFile &ref_file, TFile &val_file, ifstream &recstr, const int
         recstr >> DimSwitch >> StatSwitch >> Chi2Switch >> LogSwitch;
         recstr >> RefCol >> ValCol;
         recstr.getline(xAxisTitle, 200);
+
 
 	//Make sure extra Profile info is also taken care of
         if (DrawSwitch == 0) {

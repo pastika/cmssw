@@ -28,6 +28,13 @@
 #include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
 #include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
 
+// Includes for HGCal
+#include "Geometry/Records/interface/CaloGeometryRecord.h"
+#include "Geometry/FCalGeometry/interface/HGCalGeometry.h"
+#include "DataFormats/ForwardDetId/interface/HGCalDetId.h"
+#include "DataFormats/ForwardDetId/interface/HGCHEDetId.h"
+#include "DataFormats/HGCRecHit/interface/HGCRecHitCollections.h"
+
 #include "SimDataFormats/CaloHit/interface/PCaloHitContainer.h"
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 
@@ -85,7 +92,9 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   edm::InputTag theHBHERecHitCollectionLabel;
   edm::InputTag theHFRecHitCollectionLabel;
   edm::InputTag theHORecHitCollectionLabel;
+  edm::InputTag theHGCHEBRecHitCollectionLabel_;
 
+  // THIS MUST BE CHAGED TO ACCOMIDATE HGCAL - for now only use 5 to get HGCAL
   // choice of subdetector in config : noise/HB/HE/HO/HF/ALL (0/1/2/3/4/5)
   int subdet_;
 
@@ -251,6 +260,7 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* occupancy_map_HB7;
 
   MonitorElement* occupancy_map_HE1;
+  MonitorElement* occupancy_map_HE1_2;
   MonitorElement* occupancy_map_HE2;
   MonitorElement* occupancy_map_HE3;
   MonitorElement* occupancy_map_HE4;
@@ -448,6 +458,8 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* meNumEcalRecHitsConeHE;
 
   edm::ESHandle<CaloGeometry> geometry ;
+  edm::ESHandle<HGCalGeometry> hgcal_geom;
+  std::string hgcalGeomName_;
 
   //Status word histos
   MonitorElement* RecHit_StatusWord_HB;
@@ -463,6 +475,7 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* RecHit_Aux_StatusWord_HO;
 
  // Filling vectors with essential RecHits data
+  std::vector<int>      cdet;
   std::vector<int>      csub;
   std::vector<int>      cieta;
   std::vector<int>      ciphi;

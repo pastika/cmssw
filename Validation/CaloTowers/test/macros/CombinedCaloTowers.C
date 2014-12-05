@@ -3,7 +3,7 @@ void ProcessSubDetCT(TFile &ref_file, TFile &val_file, ifstream &ctstr, const in
 
 //Macro takes 3 parameters as arguments: the version to be validated, the reference version and a 2-bit integer that determines whether or not the samples are harvested
 void CombinedCaloTowers(TString ref_vers="210", TString val_vers="210pre6", int harvest=0){
-  
+
   //Information contained in stream (in order): 
   //Name of histograms in root file, 1/0 switch whether they should be processed. If yes, then:
   //title of file where they should be saved, range of x-axis, range of y-axis (if not default)
@@ -55,7 +55,7 @@ void CombinedCaloTowers(TString ref_vers="210", TString val_vers="210pre6", int 
 }
 
 void ProcessSubDetCT(TFile &ref_file, TFile &val_file, ifstream &ctstr, const int nHist1, const int nHist2, const int nProf, const int nHistTot, TString ref_vers, TString val_vers, int harvest){
-  
+
   TString RefHistDir, ValHistDir;
 
   if      (harvest == 11){
@@ -118,6 +118,7 @@ void ProcessSubDetCT(TFile &ref_file, TFile &val_file, ifstream &ctstr, const in
     ctstr>>DimSwitch>>StatSwitch>>Chi2Switch>>LogSwitch;
     ctstr>>RefCol>>ValCol;
     ctstr.getline(xAxisTitle,200);
+    continue;
     if (DrawSwitch == 0) continue;
     
     //Format pad
