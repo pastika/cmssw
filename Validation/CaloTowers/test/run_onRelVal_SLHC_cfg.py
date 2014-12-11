@@ -66,13 +66,16 @@ process.hcalDigiAnalyzer = cms.EDAnalyzer("HcalDigisValidation",
 #    subdetector               = cms.untracked.string('HE'),
     digiLabel   = cms.InputTag("hcalDigis"),  # regular collections
 #--- Two Upgrade (doSLHC=True) collections
-    digiLabelHBHE = cms.InputTag("simHcalDigis","HBHEUpgradeDigiCollection"), 
-    digiLabelHF = cms.InputTag("simHcalDigis","HFUpgradeDigiCollection"),
+    digiLabelHBHE =   cms.InputTag("simHcalDigis","HBHEUpgradeDigiCollection"), 
+    digiLabelHF =     cms.InputTag("simHcalDigis","HFUpgradeDigiCollection"),
+    digiLabelHGCHEB = cms.InputTag("mix", "HGCDigisHEback", "DIGI2RAW"),
+    hgchebGeomName =  cms.untracked.string('HGCalHEScintillatorSensitive'),
     zside		      = cms.untracked.string('*'),
     mode		      = cms.untracked.string('multi'),
     hcalselector	      = cms.untracked.string('all'),
     mc			      = cms.untracked.string('yes'), # 'yes' for MC
-    doSLHC                    = cms.untracked.bool(True) #  False for SLHC and True for regular rel val 
+    doSLHC                    = cms.untracked.bool(True),
+    doHGC                     = cms.untracked.bool(True)
 )   
 
 process.hcalTowerAnalyzer = cms.EDAnalyzer("CaloTowersValidation",
@@ -150,7 +153,7 @@ process.p2 = cms.Path(
 #process.hcalTowerAnalyzer * 
 #process.hcalNoiseRates * 
 process.hcalRecoAnalyzer *
-#process.hcalDigiAnalyzer * 
+process.hcalDigiAnalyzer * 
 #process.calotowersClient * 
 #process.noiseratesClient *
 #process.hcalrechitsClient * 

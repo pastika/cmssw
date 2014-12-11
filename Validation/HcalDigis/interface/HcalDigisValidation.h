@@ -20,6 +20,7 @@
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 #include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
 #include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
+
 #include "SimDataFormats/CaloHit/interface/PCaloHitContainer.h"
 
 #include "CalibFormats/HcalObjects/interface/HcalDbRecord.h"
@@ -32,8 +33,15 @@
 
 #include "CalibFormats/HcalObjects/interface/HcalDbService.h"
 #include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
+#include "DataFormats/HcalDetId/interface/HcalDetId.h"
 
-
+//includes for HGCal
+#include "Geometry/Records/interface/CaloGeometryRecord.h"
+#include "Geometry/FCalGeometry/interface/HGCalGeometry.h"
+#include "DataFormats/ForwardDetId/interface/HGCalDetId.h"
+#include "DataFormats/ForwardDetId/interface/HGCHEDetId.h"
+#include "DataFormats/HGCRecHit/interface/HGCRecHitCollections.h"
+#include "DataFormats/HGCDigi/interface/HGCDigiCollections.h"
 
 #include <map>
 #include <vector>
@@ -43,6 +51,15 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+
+typedef std::pair<int, int> subdetector;
+static const subdetector SUB_NULL(0, 0);
+static const subdetector SUB_HB(4, 1);
+static const subdetector SUB_HE(4, 2);
+static const subdetector SUB_HO(4, 3);
+static const subdetector SUB_HF(4, 4);
+static const subdetector SUB_HGCHEB(6, 5);
+
 
 class HcalDigisValidation : public edm::EDAnalyzer {
 public:
@@ -92,11 +109,12 @@ private:
 
     MonitorElement* monitor(std::string name);
 
-    void booking(std::string subdetopt, int bnoise, int bmc);
+    void booking(std::string subdetopt, bool bnoise, bool bmc);
 
     std::string str(int x);
 
-    template<class Digi> void reco(const edm::Event& iEvent, const edm::EventSetup& iSetup);
+    template<class Digi> void reco(const edm::Event& iEvent, const edm::EventSetup& iSetup, std::string subdet);
+
     void eval_occupancy();
 
     std::string outputFile_;
@@ -106,21 +124,45 @@ private:
     edm::InputTag inputTag_;
     std::string mode_;
     std::string mc_;
+    std::string hgchebGeomName_;
     int noise_;
     bool doSLHC_;
+    bool doHGC_;
 
     // specifically for SLHC    
-    edm::InputTag inputTag_HBHE;  
-    edm::InputTag inputTag_HF;
+    edm::InputTag inputTagHBHE_;  
+    edm::InputTag inputTagHF_;
 
+    // Tag for HGCAL
+    edm::InputTag inputTagHGCHEB_;
 
-    edm::ESHandle<CaloGeometry> geometry;
-    edm::ESHandle<HcalDbService> conditions;
-    int nevent1;
-    int nevent2;
-    int nevent3;
-    int nevent4;
-    int nevtot;
+    edm::ESHandle<CaloGeometry> geometry_;
+    edm::ESHandle<HGCalGeometry> hgchebGeom_;
+    edm::ESHandle<HcalDbService> conditions_;
+    
+    std::map<std::string, int> nevents_;
+
+    int nevtot = 0;
+
+    // Det numbering: 4 - HCAL, 6 - Forward
+    // HCAL subdet numbering: 1 - HB, 2 - HE, 3 - HO, 4 - HF
+    // HGC subdet numbering 3 - EE, 4 - HEF, 5 - HEB
+
+    class DigiSummary
+    {
+    public:
+        DetId cell;
+        int depth;
+        int iphi;
+        int ieta;
+        double eta;
+        double phi;
+        subdetector sub;
+        int capId[10];
+    };
+
+    template<class DigiCollectionIter> void getDigiSummary(DigiCollectionIter& digiItr, DigiSummary *ds);
+    template<class Digi> void getCalibDigi(const Digi& ucalDigi, CaloSamples* tool);
 
 };
 

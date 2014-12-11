@@ -5,5 +5,12 @@
 <use   name="Geometry/CaloGeometry"/>
 <use   name="CalibFormats/HcalObjects"/>
 <use   name="DQMServices/Core"/>
+<use   name="Geometry/Records"/>
+<use   name="Geometry/FCalGeometry"/>
+<use   name="DataFormats/ForwardDetId"/>
+<use   name="DataFormats/HGCRecHit"/>
+<use   name="DataFormats/HGCDigi"/>
 <use   name="root"/>
 <use   name="clhep"/>
+
+<Flags CXXFLAGS="-g"/>
