@@ -170,6 +170,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* emap_depth5;
   MonitorElement* emap_depth6;
   MonitorElement* emap_depth7;
+  MonitorElement* emap_depth8;
+  MonitorElement* emap_depth9;
+  MonitorElement* emap_depth10;
+  MonitorElement* emap_depth11;
+  MonitorElement* emap_depth12;
 
   MonitorElement* emean_vs_ieta_HB1;
   MonitorElement* emean_vs_ieta_HB2;
@@ -186,6 +191,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* emean_vs_ieta_HE5;
   MonitorElement* emean_vs_ieta_HE6;
   MonitorElement* emean_vs_ieta_HE7;
+  MonitorElement* emean_vs_ieta_HE8;
+  MonitorElement* emean_vs_ieta_HE9;
+  MonitorElement* emean_vs_ieta_HE10;
+  MonitorElement* emean_vs_ieta_HE11;
+  MonitorElement* emean_vs_ieta_HE12;
 
   MonitorElement* emean_vs_ieta_HO;
   MonitorElement* emean_vs_ieta_HF1;
@@ -206,6 +216,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* RMS_vs_ieta_HE5;
   MonitorElement* RMS_vs_ieta_HE6;
   MonitorElement* RMS_vs_ieta_HE7;
+  MonitorElement* RMS_vs_ieta_HE8;
+  MonitorElement* RMS_vs_ieta_HE9;
+  MonitorElement* RMS_vs_ieta_HE10;
+  MonitorElement* RMS_vs_ieta_HE11;
+  MonitorElement* RMS_vs_ieta_HE12;
 
   MonitorElement* RMS_vs_ieta_HO;
   MonitorElement* RMS_vs_ieta_HF1;
@@ -226,6 +241,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* emean_seqHE5;
   MonitorElement* emean_seqHE6;
   MonitorElement* emean_seqHE7;
+  MonitorElement* emean_seqHE8;
+  MonitorElement* emean_seqHE9;
+  MonitorElement* emean_seqHE10;
+  MonitorElement* emean_seqHE11;
+  MonitorElement* emean_seqHE12;
 
   MonitorElement* emean_seqHO;
   MonitorElement* emean_seqHF1;
@@ -246,6 +266,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* RMS_seq_HE5;
   MonitorElement* RMS_seq_HE6;
   MonitorElement* RMS_seq_HE7;
+  MonitorElement* RMS_seq_HE8;
+  MonitorElement* RMS_seq_HE9;
+  MonitorElement* RMS_seq_HE10;
+  MonitorElement* RMS_seq_HE11;
+  MonitorElement* RMS_seq_HE12;
 
   MonitorElement* RMS_seq_HO;
   MonitorElement* RMS_seq_HF1;
@@ -267,6 +292,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* occupancy_map_HE5;
   MonitorElement* occupancy_map_HE6;
   MonitorElement* occupancy_map_HE7;
+  MonitorElement* occupancy_map_HE8;
+  MonitorElement* occupancy_map_HE9;
+  MonitorElement* occupancy_map_HE10;
+  MonitorElement* occupancy_map_HE11;
+  MonitorElement* occupancy_map_HE12;
 
   MonitorElement* occupancy_map_HO;
   MonitorElement* occupancy_map_HF1;
@@ -287,6 +317,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* occupancy_vs_ieta_HE5;
   MonitorElement* occupancy_vs_ieta_HE6;
   MonitorElement* occupancy_vs_ieta_HE7;
+  MonitorElement* occupancy_vs_ieta_HE8;
+  MonitorElement* occupancy_vs_ieta_HE9;
+  MonitorElement* occupancy_vs_ieta_HE10;
+  MonitorElement* occupancy_vs_ieta_HE11;
+  MonitorElement* occupancy_vs_ieta_HE12;
 
   MonitorElement* occupancy_vs_ieta_HO;
   MonitorElement* occupancy_vs_ieta_HF1;
@@ -307,6 +342,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* occupancy_seqHE5;
   MonitorElement* occupancy_seqHE6;
   MonitorElement* occupancy_seqHE7;
+  MonitorElement* occupancy_seqHE8;
+  MonitorElement* occupancy_seqHE9;
+  MonitorElement* occupancy_seqHE10;
+  MonitorElement* occupancy_seqHE11;
+  MonitorElement* occupancy_seqHE12;
 
 
   MonitorElement* occupancy_seqHO;
@@ -395,6 +435,11 @@ class HcalRecHitsValidation : public edm::EDAnalyzer {
   MonitorElement* meTE_HE5;
   MonitorElement* meTE_HE6;
   MonitorElement* meTE_HE7;
+  MonitorElement* meTE_HE8;
+  MonitorElement* meTE_HE9;
+  MonitorElement* meTE_HE10;
+  MonitorElement* meTE_HE11;
+  MonitorElement* meTE_HE12;
 
   MonitorElement* meTEprofileHE_Low;
   MonitorElement* meTEprofileHE;
