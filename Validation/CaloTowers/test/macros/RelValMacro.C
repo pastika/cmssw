@@ -155,7 +155,12 @@ void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::
     //Get objects from TFiles
     TDirectory *refTD = dfRef(ref_file, histDir);
     TObject *refObj = 0;
-    if(refTD) refObj = refTD->Get(histName.c_str())->Clone();
+    if(refTD) 
+    {
+        refObj = refTD->Get(histName.c_str());
+        std::cout << refObj << std::endl;
+        if(refObj) refObj = refObj->Clone();
+    }
     else 
     {
 	std::cout << "Cannot find directory \"" << histDir << "\" in file \"" << ref_file->GetName() << "\"" << std::endl;
@@ -169,7 +174,11 @@ void ProcessRelVal(TFile *ref_file, TFile *val_file, std::string ref_vers, std::
 
     TDirectory *valTD = dfVal(val_file, histDir);
     TObject *valObj = 0;
-    if(valTD) valObj = valTD->Get(histName.c_str())->Clone();
+    if(valTD) 
+    {
+        valObj = valTD->Get(histName.c_str());
+        if(valObj) valObj = valObj->Clone();
+    }
     else
     {
 	std::cout << "Cannot find directory \"" << histDir << "\" in file \"" << val_file->GetName() << "\"" << std::endl;
