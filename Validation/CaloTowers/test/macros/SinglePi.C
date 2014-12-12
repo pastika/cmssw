@@ -18,8 +18,43 @@
 #include <iostream>
 
 TDirectory* fileDirectory( TDirectory *target, std::string s);
+void SinglePi(const TString ref_vers="330pre6", const TString val_vers="330pre6", bool fastsim=false);
 
-void SinglePi(const TString ref_vers="330pre6", const TString val_vers="330pre6", bool fastsim=false){
+int main(int argn, char **argv)
+{
+    if(argn == 3)      SinglePi(argv[1], argv[2]);
+    else if(argn == 4) SinglePi(argv[1], argv[2], strcmp(argv[3], "fastsim") == 0);
+    else               printf("Usage: ./SinglePi.exe ref_ver val_ver [fastsim]\n");
+}
+
+void SinglePi(const TString ref_vers, const TString val_vers, bool fastsim){
+
+   gStyle->SetCanvasBorderMode(0);
+   gStyle->SetCanvasColor(432-10);//kCyan-10  //formerly 52
+   gStyle->SetTitleSize(0.06, "XYZ");
+   gStyle->SetTitleXOffset(0.9);
+   gStyle->SetTitleYOffset(1.25);
+
+   gStyle->SetLabelOffset(0.007, "XYZ");
+   gStyle->SetLabelSize(0.05, "XYZ");
+
+ 
+   gStyle->SetTitle("");
+   gStyle->SetOptTitle(0);
+ 
+   gStyle->SetHistLineColor(0);//45
+   gStyle->SetHistLineStyle(1);
+   gStyle->SetHistLineWidth(2);
+
+   gStyle->SetPadColor(0);//52  
+   gStyle->SetPadBorderSize(1); 
+   gStyle->SetPadBottomMargin(0.15);
+   gStyle->SetPadTopMargin(0.1);
+   gStyle->SetPadLeftMargin(0.15);
+   gStyle->SetPadRightMargin(0.15);
+   gStyle->SetFrameBorderMode(0);
+   gStyle->SetFrameFillColor(10);//55
+
 
    TString ref_file = "pi50scan"+ref_vers+"_ECALHCAL_CaloTowers.root";
    TString val_file = "pi50scan"+val_vers+"_ECALHCAL_CaloTowers.root";
@@ -408,6 +443,7 @@ TDirectory* fileDirectory( TDirectory *target, std::string s)
 	    if((retval = fileDirectory((TDirectory*)obj, s))) break;
 	    
 	}
+	else break;
     }
     return retval;
 }
