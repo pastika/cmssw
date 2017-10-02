@@ -19,7 +19,7 @@ class QGTagger : public edm::EDProducer{
 
    private:
       virtual void produce(edm::Event&, const edm::EventSetup&);
-      std::tuple<int, float, float> calcVariables(const reco::Jet*, edm::Handle<reco::VertexCollection>&);
+      std::tuple<int, float, float, float> calcVariables(const reco::Jet*, edm::Handle<reco::VertexCollection>&);
       template <typename T> void putInEvent(std::string, const edm::Handle<edm::View<reco::Jet>>&, std::vector<T>*, edm::Event&);
       bool isPackedCandidate(const reco::Candidate* candidate);
 
